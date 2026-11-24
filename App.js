@@ -1,25 +1,41 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { supabase } from './lib/supabase';
+import { estilos as e } from './lib/estilos';
+import AuthScreen from './screens/AuthScreen';
+import NuevaPasswordScreen from './screens/NuevaPasswordScreen';
+import HomeScreen from './screens/HomeScreen';
 
 export default function App() {
-  const [estado, setEstado] = useState('Probando conexión...');
+  const [session, setSession] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [recuperando, setRecuperando] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { error } = await supabase.from('movimientos').select('id').limit(1);
-      setEstado(error ? `❌ Error: ${error.message}` : '✅ Conectado a Supabase');
-    })();
+    // ¿Ya hay alguien con sesión iniciada? (como revisar $_SESSION)
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setCargando(false);
+    });
+
+    // Escucha cuando alguien entra, sale o llega del enlace de recuperar contraseña
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, nuevaSesion) => {
+      if (evento === 'PASSWORD_RECOVERY') setRecuperando(true);
+      setSession(nuevaSesion);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{estado}</Text>
-    </View>
-  );
-}
+  if (cargando) {
+    return (
+      <View style={e.pantalla}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  text: { fontSize: 18 },
-});
+  if (recuperando) return <NuevaPasswordScreen onListo={() => setRecuperando(false)} />;
+  if (!session) return <AuthScreen />;
+  return <HomeScreen session={session} />;
+} 

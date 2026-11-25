@@ -1,0 +1,44 @@
+name: Compilar y desplegar en Netlify
+
+# ¿Cuándo se ejecuta? En cada push a CUALQUIER rama
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch: # permite ejecutarlo a mano desde GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # una computadora Linux que GitHub presta gratis
+
+    steps:
+      - name: 1. Descargar el código
+        uses: actions/checkout@v4
+
+      - name: 2. Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 3. Instalar dependencias
+        run: npm ci
+
+      - name: 4. Compilar la versión web de Expo
+        run: npx expo export --platform web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: 5. Desplegar en Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            # Rama main = versión oficial (producción)
+            npx --yes netlify-cli deploy --dir=dist --prod --no-build --message "Deploy automático: $GITHUB_SHA"
+          else
+            # Otras ramas = versión de prueba con su propia dirección
+            RAMA="${GITHUB_REF_NAME//\//-}"
+            npx --yes netlify-cli deploy --dir=dist --alias="$RAMA" --no-build --message "Preview de la rama $GITHUB_REF_NAME"
+          fi

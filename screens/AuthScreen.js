@@ -21,6 +21,7 @@ function traducirError(msg = '') {
 
 export default function AuthScreen() {
   const [modo, setModo] = useState('login'); // 'login' | 'registro' | 'recuperar'
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -36,6 +37,9 @@ export default function AuthScreen() {
     const correo = email.trim();
 
     // Validaciones (como las que harías con if en PHP antes del INSERT)
+    if (modo === 'registro' && !nombre.trim()) {
+      return setMensaje({ tipo: 'error', texto: 'Escribe tu nombre.' });
+    }
     if (!correo) return setMensaje({ tipo: 'error', texto: 'Escribe tu correo.' });
     if (modo !== 'recuperar' && password.length < 6) {
       return setMensaje({ tipo: 'error', texto: 'La contraseña debe tener al menos 6 caracteres.' });
@@ -48,7 +52,12 @@ export default function AuthScreen() {
         if (error) throw error;
         // Si entra bien, App.js detecta la sesión y cambia de pantalla solo
       } else if (modo === 'registro') {
-        const { data, error } = await supabase.auth.signUp({ email: correo, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: correo,
+          password,
+          // Datos extra del usuario (se guardan en user_metadata)
+          options: { data: { nombre: nombre.trim(), full_name: nombre.trim() } },
+        });
         if (error) throw error;
         if (!data.session) {
           setMensaje({ tipo: 'ok', texto: 'Cuenta creada. Revisa tu correo para confirmarla.' });
@@ -74,6 +83,17 @@ export default function AuthScreen() {
 
         {mensaje && (
           <Text style={mensaje.tipo === 'error' ? e.mensajeError : e.mensajeOk}>{mensaje.texto}</Text>
+        )}
+
+        {modo === 'registro' && (
+          <TextInput
+            style={e.input}
+            placeholder="Tu nombre"
+            value={nombre}
+            onChangeText={setNombre}
+            autoCapitalize="words"
+            autoComplete="name"
+          />
         )}
 
         <TextInput
@@ -112,4 +132,4 @@ export default function AuthScreen() {
       </View>
     </View>
   );
-}  
+}

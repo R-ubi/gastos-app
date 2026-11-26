@@ -17,6 +17,7 @@ Una app para registrar gastos e ingresos personales, hecha con React Native + Ex
 - **Balance:** balance total (ingresos − gastos) con el desglose de ambos.
 - **Historial:** lista de movimientos desde Supabase, con filtros y opción de eliminar.
 - **Todo se guarda en Supabase.** Cada usuario solo ve sus propios movimientos gracias a **Row Level Security (RLS)**.
+- **Diseño:** interfaz original con fondo animado, tarjetas de cristal, gráfica del porcentaje gastado y diseño responsivo (2 columnas en computadora, 1 en celular).
 
 | Parte | Herramienta |
 |---|---|
@@ -53,9 +54,3 @@ El código se me hacía familiar porque vengo de PHP, Python y MySQL. El verdade
 Aprendí muchísimo. Lo que más me gustó fue **subir mi aplicación a la red**: se la enseñé a mi familia e incluso pensamos usarla para llevar un mejor control de nuestras finanzas.
 
 Cuando algo no lo entendía, lo investigaba, y al leer la definición me sorprendía su significado, como descubrir qué es Supabase y todo lo que resuelve por sí solo. **Aprender me causa satisfacción**, y este reto me demostró que puedo entender herramientas nuevas y resolver los bloqueos de principio a fin.
-
-## 🛠️ Cómo correrlo localmente
-
-1. Clonar el repositorio y ejecutar `npm install`.
-2. Crear un archivo `.env` con `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-3. Ejecutar `npx expo start --web`.

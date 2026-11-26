@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { supabase } from './lib/supabase';
-import { estilos as e } from './lib/estilos';
+import { tema } from './lib/tema';
+import FondoAurora from './components/FondoAurora';
 import AuthScreen from './screens/AuthScreen';
 import NuevaPasswordScreen from './screens/NuevaPasswordScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -27,15 +28,26 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  let pantalla;
   if (cargando) {
-    return (
-      <View style={e.pantalla}>
-        <ActivityIndicator size="large" />
+    pantalla = (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={tema.cian} />
       </View>
     );
+  } else if (recuperando) {
+    pantalla = <NuevaPasswordScreen onListo={() => setRecuperando(false)} />;
+  } else if (!session) {
+    pantalla = <AuthScreen />;
+  } else {
+    pantalla = <HomeScreen session={session} />;
   }
 
-  if (recuperando) return <NuevaPasswordScreen onListo={() => setRecuperando(false)} />;
-  if (!session) return <AuthScreen />;
-  return <HomeScreen session={session} />;
-} 
+  // El fondo aurora va detrás de todas las pantallas
+  return (
+    <View style={{ flex: 1, backgroundColor: tema.fondo }}>
+      <FondoAurora />
+      {pantalla}
+    </View>
+  );
+}

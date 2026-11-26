@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Cristal from './Cristal';
 import { supabase } from '../lib/supabase';
 import { esFechaValida, hoyISO } from '../lib/formato';
+import { tema } from '../lib/tema';
 
-const VERDE = '#16a34a';
-const ROJO = '#dc2626';
+const DEGRADADO = {
+  gasto: [tema.rojo, tema.rosa],
+  ingreso: [tema.verde, tema.cian],
+};
 
 export default function FormularioMovimiento({ onGuardado }) {
   const [tipo, setTipo] = useState('gasto'); // 'gasto' | 'ingreso'
@@ -14,8 +19,6 @@ export default function FormularioMovimiento({ onGuardado }) {
   const [fecha, setFecha] = useState(hoyISO());
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
-
-  const colorTipo = tipo === 'ingreso' ? VERDE : ROJO;
 
   const guardar = async () => {
     setMensaje(null);
@@ -34,7 +37,6 @@ export default function FormularioMovimiento({ onGuardado }) {
 
     setGuardando(true);
     // INSERT INTO movimientos (tipo, monto, descripcion, fecha) VALUES (...)
-    // El user_id lo pone Supabase solo, con el usuario que inició sesión
     const { error } = await supabase.from('movimientos').insert({
       tipo,
       monto: Math.round(valor * 100) / 100,
@@ -45,7 +47,6 @@ export default function FormularioMovimiento({ onGuardado }) {
 
     if (error) return setMensaje({ tipo: 'error', texto: error.message });
 
-    // Limpia el formulario y avisa a la pantalla principal que recargue
     setMonto('');
     setDescripcion('');
     setFecha(hoyISO());
@@ -54,25 +55,13 @@ export default function FormularioMovimiento({ onGuardado }) {
   };
 
   return (
-    <View style={s.tarjeta}>
+    <Cristal>
       <Text style={s.titulo}>Nuevo movimiento</Text>
 
       {/* Selector Gasto / Ingreso */}
       <View style={s.selector}>
-        <Pressable
-          style={[s.opcion, tipo === 'gasto' && { backgroundColor: ROJO }]}
-          onPress={() => setTipo('gasto')}
-        >
-          <Ionicons name="arrow-up" size={16} color={tipo === 'gasto' ? '#fff' : ROJO} />
-          <Text style={[s.opcionTexto, tipo === 'gasto' && s.opcionTextoActivo]}>Gasto</Text>
-        </Pressable>
-        <Pressable
-          style={[s.opcion, tipo === 'ingreso' && { backgroundColor: VERDE }]}
-          onPress={() => setTipo('ingreso')}
-        >
-          <Ionicons name="arrow-down" size={16} color={tipo === 'ingreso' ? '#fff' : VERDE} />
-          <Text style={[s.opcionTexto, tipo === 'ingreso' && s.opcionTextoActivo]}>Ingreso</Text>
-        </Pressable>
+        <Opcion activa={tipo === 'gasto'} color={tema.rojo} icono="arrow-up" texto="Gasto" onPress={() => setTipo('gasto')} />
+        <Opcion activa={tipo === 'ingreso'} color={tema.verde} icono="arrow-down" texto="Ingreso" onPress={() => setTipo('ingreso')} />
       </View>
 
       <Text style={s.label}>Monto</Text>
@@ -81,7 +70,7 @@ export default function FormularioMovimiento({ onGuardado }) {
         <TextInput
           style={s.inputSinBorde}
           placeholder="0.00"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#64748b"
           value={monto}
           onChangeText={setMonto}
           keyboardType="decimal-pad"
@@ -92,7 +81,7 @@ export default function FormularioMovimiento({ onGuardado }) {
       <TextInput
         style={s.input}
         placeholder={tipo === 'ingreso' ? 'Ej. Sueldo, venta...' : 'Ej. Comida, transporte...'}
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor="#64748b"
         value={descripcion}
         onChangeText={setDescripcion}
         maxLength={80}
@@ -101,8 +90,8 @@ export default function FormularioMovimiento({ onGuardado }) {
       <Text style={s.label}>Fecha (AAAA-MM-DD)</Text>
       <TextInput
         style={s.input}
-        placeholder="2026-11-24"
-        placeholderTextColor="#9ca3af"
+        placeholder="2026-11-25"
+        placeholderTextColor="#64748b"
         value={fecha}
         onChangeText={setFecha}
         maxLength={10}
@@ -112,37 +101,46 @@ export default function FormularioMovimiento({ onGuardado }) {
         <Text style={mensaje.tipo === 'error' ? s.error : s.ok}>{mensaje.texto}</Text>
       )}
 
-      <Pressable
-        style={[s.boton, { backgroundColor: colorTipo }, guardando && { opacity: 0.6 }]}
-        onPress={guardar}
-        disabled={guardando}
-      >
-        {guardando ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Ionicons name="add-circle-outline" size={20} color="#fff" />
-            <Text style={s.botonTexto}>{tipo === 'ingreso' ? 'Agregar ingreso' : 'Agregar gasto'}</Text>
-          </>
-        )}
+      <Pressable onPress={guardar} disabled={guardando} style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}>
+        <LinearGradient
+          colors={DEGRADADO[tipo]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[s.boton, guardando && { opacity: 0.6 }]}
+        >
+          {guardando ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="add-circle-outline" size={20} color="#fff" />
+              <Text style={s.botonTexto}>{tipo === 'ingreso' ? 'Agregar ingreso' : 'Agregar gasto'}</Text>
+            </>
+          )}
+        </LinearGradient>
       </Pressable>
-    </View>
+    </Cristal>
+  );
+}
+
+function Opcion({ activa, color, icono, texto, onPress }) {
+  return (
+    <Pressable style={[s.opcion, activa && { backgroundColor: color + '33', borderColor: color }]} onPress={onPress}>
+      <Ionicons name={icono} size={16} color={activa ? color : tema.textoSuave} />
+      <Text style={[s.opcionTexto, activa && { color: tema.texto }]}>{texto}</Text>
+    </Pressable>
   );
 }
 
 const s = StyleSheet.create({
-  tarjeta: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+  titulo: { fontSize: 18, fontWeight: '700', color: tema.texto, marginBottom: 14 },
+  selector: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
   },
-  titulo: { fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 14 },
-  selector: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 4, marginBottom: 14 },
   opcion: {
     flex: 1,
     flexDirection: 'row',
@@ -150,43 +148,44 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  opcionTexto: { fontSize: 15, fontWeight: '600', color: '#475569' },
-  opcionTextoActivo: { color: '#ffffff' },
-  label: { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6 },
+  opcionTexto: { fontSize: 15, fontWeight: '600', color: tema.textoSuave },
+  label: { fontSize: 13, fontWeight: '600', color: tema.textoSuave, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 12,
+    borderColor: tema.borde,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
+    padding: 13,
     fontSize: 16,
-    color: '#1f2937',
+    color: tema.texto,
     marginBottom: 12,
   },
   inputMonto: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderColor: tema.borde,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
+    paddingHorizontal: 13,
     marginBottom: 12,
   },
-  signo: { fontSize: 20, fontWeight: '700', color: '#64748b', marginRight: 6 },
-  inputSinBorde: { flex: 1, paddingVertical: 12, fontSize: 20, fontWeight: '700', color: '#1f2937' },
-  error: { color: ROJO, marginBottom: 10, textAlign: 'center' },
-  ok: { color: VERDE, marginBottom: 10, textAlign: 'center' },
+  signo: { fontSize: 22, fontWeight: '700', color: tema.textoSuave, marginRight: 6 },
+  inputSinBorde: { flex: 1, paddingVertical: 12, fontSize: 22, fontWeight: '800', color: tema.texto },
+  error: { color: tema.rojo, marginBottom: 10, textAlign: 'center' },
+  ok: { color: tema.verde, marginBottom: 10, textAlign: 'center' },
   boton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 14,
+    padding: 15,
     marginTop: 4,
   },
-  botonTexto: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
-}); 
+  botonTexto: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+});

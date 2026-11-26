@@ -1,15 +1,16 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatoDinero, formatoFecha } from '../lib/formato';
+import { tema } from '../lib/tema';
 
 // Un renglón del historial: icono, descripción, fecha, monto y botón de borrar
 export default function ItemMovimiento({ movimiento, onEliminar, eliminando }) {
   const esIngreso = movimiento.tipo === 'ingreso';
-  const color = esIngreso ? '#16a34a' : '#dc2626';
+  const color = esIngreso ? tema.verde : tema.rojo;
 
   return (
     <View style={s.item}>
-      <View style={[s.icono, { backgroundColor: esIngreso ? '#dcfce7' : '#fee2e2' }]}>
+      <View style={[s.icono, { backgroundColor: color + '22', borderColor: color + '55' }]}>
         <Ionicons name={esIngreso ? 'trending-up' : 'trending-down'} size={20} color={color} />
       </View>
 
@@ -22,10 +23,15 @@ export default function ItemMovimiento({ movimiento, onEliminar, eliminando }) {
         {esIngreso ? '+' : '-'}{formatoDinero(movimiento.monto)}
       </Text>
 
-      <Pressable style={s.borrar} onPress={() => onEliminar(movimiento)} disabled={eliminando} hitSlop={8}>
+      <Pressable
+        style={({ hovered }) => [s.borrar, hovered && { backgroundColor: 'rgba(251,113,133,0.15)' }]}
+        onPress={() => onEliminar(movimiento)}
+        disabled={eliminando}
+        hitSlop={8}
+      >
         {eliminando
-          ? <ActivityIndicator size="small" color="#9ca3af" />
-          : <Ionicons name="trash-outline" size={20} color="#9ca3af" />}
+          ? <ActivityIndicator size="small" color={tema.textoSuave} />
+          : <Ionicons name="trash-outline" size={19} color={tema.textoSuave} />}
       </Pressable>
     </View>
   );
@@ -38,12 +44,19 @@ const s = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  icono: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  icono: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   textos: { flex: 1 },
-  descripcion: { fontSize: 15, fontWeight: '600', color: '#1f2937' },
-  fecha: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  monto: { fontSize: 15, fontWeight: '700' },
-  borrar: { padding: 6, borderRadius: 8 },
-}); 
+  descripcion: { fontSize: 15, fontWeight: '600', color: tema.texto },
+  fecha: { fontSize: 12, color: tema.textoSuave, marginTop: 2 },
+  monto: { fontSize: 15, fontWeight: '800' },
+  borrar: { padding: 8, borderRadius: 10 },
+});
